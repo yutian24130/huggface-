@@ -1,0 +1,30 @@
+from flask import Flask, render_template, request
+import requests
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    if request.method == 'POST':
+        access_token = request.form['access_token']
+        model_name = request.form['model_name']
+        save_path = request.form['save_path']
+
+        headers = {
+            'Authorization': f'Bearer {access_token}'
+        }
+
+        response = requests.get(f'https://huggingface.co/{model_name}/resolve/main/pytorch_model.bin', headers=headers, stream=True)
+        if response.status_code == 200:
+            with open(save_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=1024):
+                    f.write(chunk)
+            
+            return '模型下载成功！'
+        else:
+            return '模型下载失败'
+
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run()
